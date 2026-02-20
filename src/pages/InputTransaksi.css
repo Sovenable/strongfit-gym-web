@@ -1,0 +1,146 @@
+/* ===== INFO BOX ===== */
+.info-box {
+  background: #f0f4ff;
+  border: 1px solid #c5d5f0;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+}
+
+.info-box strong {
+  color: #1a1a2e;
+  font-size: 14px;
+}
+
+.info-box p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #555;
+  line-height: 1.5;
+}
+
+/* ===== TRANSAKSI LAYOUT (form kiri + info kanan) ===== */
+.transaksi-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 24px;
+  align-items: start;
+}
+
+.transaksi-form {
+  max-width: none;
+}
+
+/* ===== SEARCH DROPDOWN ===== */
+.search-group {
+  position: relative;
+}
+
+.search-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border: 1px solid #d0d0d0;
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.search-item {
+  padding: 10px 14px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background-color 0.15s;
+}
+
+.search-item:hover {
+  background-color: #f0f4ff;
+}
+
+.search-item-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
+.search-item-hp {
+  font-size: 12px;
+  color: #888;
+}
+
+.search-item-empty {
+  padding: 12px 14px;
+  color: #999;
+  font-style: italic;
+  font-size: 13px;
+  text-align: center;
+}
+
+/* ===== INPUT DISABLED (readonly) ===== */
+.input-disabled {
+  background: #f8f9fa;
+  color: #666;
+  cursor: not-allowed;
+}
+
+/* ===== MEMBER INFO CARD (kanan) ===== */
+.member-info-card {
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  position: sticky;
+  top: 24px;
+}
+
+.member-info-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin-bottom: 8px;
+}
+
+.member-info-divider {
+  height: 1px;
+  background: #e0e0e0;
+  margin-bottom: 16px;
+}
+
+.member-info-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.info-label {
+  font-size: 13px;
+  color: #888;
+  font-weight: 500;
+}
+
+.info-value {
+  font-size: 14px;
+  color: #333;
+  font-weight: 600;
+}
+
+.member-info-empty {
+  text-align: center;
+  padding: 40px 16px;
+  color: #bbb;
+  font-size: 14px;
+  font-style: italic;
+}

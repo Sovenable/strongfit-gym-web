@@ -1,0 +1,111 @@
+.sidebar {
+  width: 250px;
+  height: 100vh;
+  background-color: #1a1a2e;
+  color: #ffffff;
+  position: fixed;
+  left: 0;
+  top: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-logo {
+  padding: 20px;
+  border-bottom: 1px solid #2d2d4a;
+  text-align: center;
+}
+
+.sidebar-logo h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 1px;
+}
+
+.sidebar-nav {
+  padding: 16px 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Nav Item (link biasa & dropdown trigger) */
+.nav-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 20px;
+  color: #a0a0b8;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-left: 3px solid transparent;
+}
+
+.nav-item:hover {
+  background-color: #2d2d4a;
+  color: #ffffff;
+}
+
+/* Active state untuk NavLink */
+.nav-item.active {
+  background-color: #2d2d4a;
+  color: #ffffff;
+  border-left: 3px solid #4a90d9;
+}
+
+.nav-icon {
+  font-size: 20px;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.nav-arrow {
+  margin-left: auto;
+  font-size: 20px;
+}
+
+/* Dropdown trigger */
+.nav-dropdown {
+  user-select: none;
+}
+
+/* Submenu */
+.nav-submenu {
+  display: flex;
+  flex-direction: column;
+}
+
+.nav-subitem {
+  display: flex;
+  align-items: center;
+  padding: 10px 20px 10px 36px;
+  color: #a0a0b8;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-left: 3px solid transparent;
+}
+
+.nav-subitem:hover {
+  background-color: #2d2d4a;
+  color: #ffffff;
+}
+
+.nav-subitem.active {
+  background-color: #2d2d4a;
+  color: #ffffff;
+  border-left: 3px solid #4a90d9;
+  font-weight: 600;
+}
+
+.nav-icon-sub {
+  font-size: 16px;
+  margin-right: 10px;
+  flex-shrink: 0;
+}

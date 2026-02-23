@@ -22,6 +22,27 @@
   margin: 20px 0;
 }
 
+/* ===== INFO BOX ENROLLMENT ===== */
+.info-box-enrollment {
+  background: #f0f4ff;
+  border: 1px solid #c5d5f0;
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+}
+
+.info-box-enrollment strong {
+  color: #1a1a2e;
+  font-size: 14px;
+}
+
+.info-box-enrollment p {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: #555;
+  line-height: 1.6;
+}
+
 /* ===== FORM GROUP ===== */
 .form-group {
   margin-bottom: 20px;
@@ -100,8 +121,24 @@
   margin-right: 4px;
 }
 
+/* ===== ALERT ERROR ===== */
+.alert-error {
+  background-color: #fde8e8;
+  border: 1px solid #f5c6c6;
+  border-radius: 8px;
+  padding: 12px 16px;
+  color: #c62828;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+.alert-error span {
+  font-weight: 700;
+  margin-right: 4px;
+}
+
 /* ===== FORM BUTTONS ===== */
-.form-buttons {
+.form-actions {
   display: flex;
   justify-content: center;
   gap: 16px;

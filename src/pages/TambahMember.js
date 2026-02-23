@@ -2,17 +2,26 @@ import React, { useState } from "react";
 import { addMember } from "../services/firebaseService";
 import "./TambahMember.css";
 
+const paketList = [
+  { nama: "1 Bulan", harga: 150000, durasiHari: 30 },
+  { nama: "3 Bulan", harga: 400000, durasiHari: 90 },
+];
+
 function TambahMember() {
   const [formData, setFormData] = useState({
     nama: "",
-    username: "",
     nomorHp: "",
+    fingerprintId: "",
     paketMembership: "",
   });
 
   const [errors, setErrors] = useState({});
   const [successMsg, setSuccessMsg] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const formatRupiah = (num) => {
+    return "Rp " + num.toLocaleString("id-ID");
+  };
 
   // Validasi form
   const validate = () => {
@@ -26,18 +35,16 @@ function TambahMember() {
       newErrors.nama = "Nama hanya boleh huruf dan spasi";
     }
 
-    if (!formData.username.trim()) {
-      newErrors.username = "Username tidak boleh kosong";
-    } else if (formData.username.trim().length < 3) {
-      newErrors.username = "Username minimal 3 karakter";
-    } else if (!/^[a-z0-9]+$/.test(formData.username)) {
-      newErrors.username = "Username hanya huruf kecil dan angka, tanpa spasi";
-    }
-
     if (!formData.nomorHp.trim()) {
       newErrors.nomorHp = "Nomor HP tidak boleh kosong";
     } else if (!/^08\d{8,11}$/.test(formData.nomorHp)) {
       newErrors.nomorHp = "Format: 08xxxxxxxxxx (10-13 digit)";
+    }
+
+    if (!formData.fingerprintId.trim()) {
+      newErrors.fingerprintId = "Fingerprint ID tidak boleh kosong";
+    } else if (!/^\d+$/.test(formData.fingerprintId)) {
+      newErrors.fingerprintId = "Fingerprint ID hanya boleh angka";
     }
 
     if (!formData.paketMembership) {
@@ -65,12 +72,12 @@ function TambahMember() {
       try {
         const result = await addMember(formData);
         setSuccessMsg(
-          `Member "${formData.nama}" berhasil ditambahkan dengan ID ${result.memberId} (Fingerprint ID: ${result.fingerprintId}). Silakan lakukan pendaftaran sidik jari di perangkat presensi dengan ID: ${result.fingerprintId}`
+          `Member "${formData.nama}" berhasil ditambahkan dengan ID ${result.memberId}. Fingerprint ID: ${formData.fingerprintId} telah terhubung. Status membership: Aktif.`
         );
         setFormData({
           nama: "",
-          username: "",
           nomorHp: "",
+          fingerprintId: "",
           paketMembership: "",
         });
         setErrors({});
@@ -85,8 +92,8 @@ function TambahMember() {
   const handleBatal = () => {
     setFormData({
       nama: "",
-      username: "",
       nomorHp: "",
+      fingerprintId: "",
       paketMembership: "",
     });
     setErrors({});
@@ -100,6 +107,16 @@ function TambahMember() {
       <div className="form-card">
         <h2 className="form-card-title">Form Pendaftaran Member Baru</h2>
         <div className="form-divider"></div>
+
+        {/* Info box enrollment */}
+        <div className="info-box-enrollment">
+          <strong>Langkah Pendaftaran Member:</strong>
+          <p>
+            1. Daftarkan sidik jari member di mesin ZKTeco terlebih dahulu dan catat User ID-nya.
+            <br />
+            2. Masukkan data member beserta Fingerprint ID (User ID dari mesin) pada form di bawah ini.
+          </p>
+        </div>
 
         {successMsg && (
           <div className="alert-success">
@@ -130,28 +147,6 @@ function TambahMember() {
             {errors.nama && <span className="error-text">{errors.nama}</span>}
           </div>
 
-          {/* Username */}
-          <div className="form-group">
-            <label className="form-label">
-              Username <span className="required">*</span>
-            </label>
-            <input
-              type="text"
-              name="username"
-              className={`form-input ${errors.username ? "input-error" : ""}`}
-              placeholder="Masukkan username"
-              value={formData.username}
-              onChange={handleChange}
-            />
-            <span className="form-hint">
-              Username akan digunakan untuk generate email:{" "}
-              <strong>{formData.username || "username"}@strongfitgym.id</strong>
-            </span>
-            {errors.username && (
-              <span className="error-text">{errors.username}</span>
-            )}
-          </div>
-
           {/* Nomor HP */}
           <div className="form-group">
             <label className="form-label">
@@ -173,6 +168,27 @@ function TambahMember() {
             )}
           </div>
 
+          {/* Fingerprint ID */}
+          <div className="form-group">
+            <label className="form-label">
+              Fingerprint ID <span className="required">*</span>
+            </label>
+            <input
+              type="text"
+              name="fingerprintId"
+              className={`form-input ${errors.fingerprintId ? "input-error" : ""}`}
+              placeholder="Masukkan User ID dari mesin ZKTeco"
+              value={formData.fingerprintId}
+              onChange={handleChange}
+            />
+            <span className="form-hint">
+              User ID yang terdaftar di mesin fingerprint saat enrollment sidik jari
+            </span>
+            {errors.fingerprintId && (
+              <span className="error-text">{errors.fingerprintId}</span>
+            )}
+          </div>
+
           {/* Paket Membership */}
           <div className="form-group">
             <label className="form-label">
@@ -187,8 +203,11 @@ function TambahMember() {
               onChange={handleChange}
             >
               <option value="">-- Pilih Paket --</option>
-              <option value="1 Bulan">1 Bulan - Rp 150.000</option>
-              <option value="3 Bulan">3 Bulan - Rp 400.000</option>
+              {paketList.map((p) => (
+                <option key={p.nama} value={p.nama}>
+                  {p.nama} - {formatRupiah(p.harga)}
+                </option>
+              ))}
             </select>
             {errors.paketMembership && (
               <span className="error-text">{errors.paketMembership}</span>

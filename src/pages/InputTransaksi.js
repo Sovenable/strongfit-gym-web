@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   onMembersSnapshot,
   addTransaksiMembership,
@@ -21,6 +21,7 @@ function InputTransaksi() {
   const [successMsg, setSuccessMsg] = useState("");
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const dropdownRef = useRef(null);
 
   // ===== Realtime listener: Members =====
   useEffect(() => {
@@ -30,13 +31,27 @@ function InputTransaksi() {
     return () => unsubscribe();
   }, []);
 
+  // ===== Close dropdown saat klik di luar =====
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   // ===== Cari member =====
-  const filteredMembers = members.filter(
-    (m) =>
-      m.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  const filteredMembers = members.filter((m) => {
+    if (!searchQuery || searchQuery.length < 1) return false;
+    const q = searchQuery.toLowerCase();
+    return (
+      m.nama.toLowerCase().includes(q) ||
       m.nomorHp.includes(searchQuery) ||
-      m.memberId.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+      m.memberId.toLowerCase().includes(q)
+    );
+  });
 
   const handleSelectMember = (member) => {
     setSelectedMember({
@@ -45,12 +60,20 @@ function InputTransaksi() {
     });
     setSearchQuery(member.nama);
     setShowDropdown(false);
+    if (errors.member) setErrors({ ...errors, member: "" });
   };
 
   const handleSearchChange = (e) => {
-    setSearchQuery(e.target.value);
+    const value = e.target.value;
+    setSearchQuery(value);
     setSelectedMember(null);
-    setShowDropdown(e.target.value.length > 0);
+    setShowDropdown(value.length >= 1);
+  };
+
+  const handleSearchFocus = () => {
+    if (searchQuery.length >= 1 && !selectedMember) {
+      setShowDropdown(true);
+    }
   };
 
   // ===== Harga otomatis =====
@@ -131,6 +154,7 @@ function InputTransaksi() {
   // ===== Status badge class =====
   const getStatusClass = (status) => {
     if (!status || status === "-") return "status-badge status-default";
+    if (status === "Belum Aktif") return "status-badge status-default";
     if (status.includes("H-7")) return "status-badge status-h7";
     if (status.includes("H-3")) return "status-badge status-h3";
     if (status === "Expired") return "status-badge status-expired";
@@ -164,32 +188,39 @@ function InputTransaksi() {
             <label className="form-label">
               Cari Member <span className="required">*</span>
             </label>
-            <div className="search-wrapper">
+            <div className="search-wrapper" ref={dropdownRef}>
               <input
                 type="text"
                 className={`form-input ${errors.member ? "input-error" : ""}`}
-                placeholder="Cari berdasarkan nama, nomor HP, atau ID member..."
+                placeholder="Ketik nama, nomor HP, atau ID member..."
                 value={searchQuery}
                 onChange={handleSearchChange}
-                onFocus={() => searchQuery.length > 0 && setShowDropdown(true)}
-                onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+                onFocus={handleSearchFocus}
               />
               {showDropdown && (
                 <div className="search-dropdown">
                   {filteredMembers.length > 0 ? (
-                    filteredMembers.slice(0, 8).map((m) => (
-                      <div
-                        key={m.id}
-                        className="search-item"
-                        onMouseDown={() => handleSelectMember(m)}
-                      >
-                        <div>
-                          <span className="search-item-name">{m.nama}</span>
-                          <span className="search-item-id"> ({m.memberId})</span>
+                    filteredMembers.slice(0, 8).map((m) => {
+                      const status = hitungStatusMembership(m.tanggalExpired);
+                      return (
+                        <div
+                          key={m.id}
+                          className="search-item"
+                          onClick={() => handleSelectMember(m)}
+                        >
+                          <div className="search-item-left">
+                            <span className="search-item-name">{m.nama}</span>
+                            <span className="search-item-id"> ({m.memberId})</span>
+                          </div>
+                          <div className="search-item-right">
+                            <span className={`search-item-status ${status === "Aktif" ? "si-aktif" : status === "Expired" ? "si-expired" : status === "Belum Aktif" ? "si-belum" : "si-warning"}`}>
+                              {status}
+                            </span>
+                            <span className="search-item-hp">{m.nomorHp}</span>
+                          </div>
                         </div>
-                        <span className="search-item-hp">{m.nomorHp}</span>
-                      </div>
-                    ))
+                      );
+                    })
                   ) : (
                     <div className="search-empty">Member tidak ditemukan</div>
                   )}
@@ -204,6 +235,8 @@ function InputTransaksi() {
           {/* Info Member yang Dipilih */}
           {selectedMember && (
             <div className="member-info-card">
+              <h3 className="member-info-title">Informasi Member</h3>
+              <div className="member-info-divider"></div>
               <div className="member-info-row">
                 <span className="info-label">ID Member</span>
                 <span className="info-value">{selectedMember.memberId}</span>

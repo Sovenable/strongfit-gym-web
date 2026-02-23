@@ -41,7 +41,7 @@ export const getMemberById = async (docId) => {
   return null;
 };
 
-// Tambah member baru
+// Tambah member baru (field: nama, nomorHp, fingerprintId, paketMembership)
 export const addMember = async (memberData) => {
   // Generate memberId otomatis: MBR001, MBR002, dst
   const snapshot = await getDocs(collection(db, "members"));
@@ -59,9 +59,8 @@ export const addMember = async (memberData) => {
   const newMember = {
     memberId: memberId,
     nama: memberData.nama,
-    username: memberData.username,
     nomorHp: memberData.nomorHp,
-    fingerprintId: String(nextNum), // ID untuk alat fingerprint
+    fingerprintId: memberData.fingerprintId,
     paketMembership: memberData.paketMembership,
     statusMembership: "Aktif",
     tanggalDaftar: Timestamp.fromDate(now),
@@ -100,13 +99,55 @@ export const onMembersSnapshot = (callback) => {
 
 // Ambil presensi berdasarkan tanggal (format: "2025-01-20")
 export const getPresensiByDate = async (tanggal) => {
-  const q = query(
-    collection(db, "presensi"),
-    where("tanggal", "==", tanggal),
-    orderBy("waktuCheckIn", "desc")
-  );
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  try {
+    const q = query(
+      collection(db, "presensi"),
+      where("tanggal", "==", tanggal),
+      orderBy("waktuCheckIn", "desc")
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  } catch (error) {
+    // Fallback: jika composite index belum ada, query tanpa orderBy
+    console.warn("Composite index belum ada, fallback tanpa orderBy:", error.message);
+    const q = query(
+      collection(db, "presensi"),
+      where("tanggal", "==", tanggal)
+    );
+    const snapshot = await getDocs(q);
+    const results = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    // Sort manual di client
+    results.sort((a, b) => {
+      const timeA = a.waktuCheckIn?.toDate ? a.waktuCheckIn.toDate() : new Date(a.waktuCheckIn || 0);
+      const timeB = b.waktuCheckIn?.toDate ? b.waktuCheckIn.toDate() : new Date(b.waktuCheckIn || 0);
+      return timeB - timeA;
+    });
+    return results;
+  }
+};
+
+// Ambil presensi berdasarkan bulan (format: "2025-01")
+export const getPresensiByMonth = async (yearMonth) => {
+  try {
+    const startDate = `${yearMonth}-01`;
+    const endDate = `${yearMonth}-32`; // akan selalu lebih besar dari tanggal manapun
+    const q = query(
+      collection(db, "presensi"),
+      where("tanggal", ">=", startDate),
+      where("tanggal", "<=", endDate)
+    );
+    const snapshot = await getDocs(q);
+    const results = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    results.sort((a, b) => {
+      const timeA = a.waktuCheckIn?.toDate ? a.waktuCheckIn.toDate() : new Date(a.waktuCheckIn || 0);
+      const timeB = b.waktuCheckIn?.toDate ? b.waktuCheckIn.toDate() : new Date(b.waktuCheckIn || 0);
+      return timeB - timeA;
+    });
+    return results;
+  } catch (error) {
+    console.error("Error fetch presensi bulanan:", error);
+    return [];
+  }
 };
 
 // Realtime listener presensi hari ini (untuk dashboard)
@@ -116,8 +157,7 @@ export const onPresensiTodaySnapshot = (callback) => {
 
   const q = query(
     collection(db, "presensi"),
-    where("tanggal", "==", tanggal),
-    orderBy("waktuCheckIn", "desc")
+    where("tanggal", "==", tanggal)
   );
 
   return onSnapshot(q, (snapshot) => {
@@ -125,6 +165,12 @@ export const onPresensiTodaySnapshot = (callback) => {
       id: doc.id,
       ...doc.data(),
     }));
+    // Sort manual di client (desc by waktuCheckIn)
+    presensi.sort((a, b) => {
+      const timeA = a.waktuCheckIn?.toDate ? a.waktuCheckIn.toDate() : new Date(a.waktuCheckIn || 0);
+      const timeB = b.waktuCheckIn?.toDate ? b.waktuCheckIn.toDate() : new Date(b.waktuCheckIn || 0);
+      return timeB - timeA;
+    });
     callback(presensi);
   });
 };
@@ -231,6 +277,13 @@ export function toDateString(date) {
   const m = String(date.getMonth() + 1).padStart(2, "0");
   const d = String(date.getDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
+}
+
+// Format Date ke string "YYYY-MM"
+export function toMonthString(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  return `${y}-${m}`;
 }
 
 // Hitung status membership berdasarkan tanggal expired

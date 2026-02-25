@@ -20,6 +20,11 @@ function Sidebar() {
   return (
     <div className="sidebar">
       <div className="sidebar-logo">
+        <img
+          src="/logo-strongfit (2).png"
+          alt="Strong Fit Logo"
+          className="sidebar-logo-img"
+        />
         <h2>Strong Fit GYM</h2>
       </div>
 

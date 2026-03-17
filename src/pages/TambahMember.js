@@ -1,23 +1,73 @@
-import React, { useState } from "react";
-import { addMember } from "../services/firebaseService";
+import React, { useState, useEffect, useCallback } from "react";
+import { addMember, cekNamaMemberExist } from "../services/firebaseService";
 import "./TambahMember.css";
+
+// URL backend API (sesuaikan kalau beda)
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:3001";
 
 const paketList = [
   { nama: "1 Bulan", harga: 150000, durasiHari: 30 },
   { nama: "3 Bulan", harga: 400000, durasiHari: 90 },
+  { nama: "6 Bulan", harga: 750000, durasiHari: 180 },
 ];
 
 function TambahMember() {
   const [formData, setFormData] = useState({
     nama: "",
     nomorHp: "",
-    fingerprintId: "",
     paketMembership: "",
   });
 
   const [errors, setErrors] = useState({});
   const [successMsg, setSuccessMsg] = useState("");
   const [loading, setLoading] = useState(false);
+  const [namaWarning, setNamaWarning] = useState("");
+
+  // State untuk data dari alat sidik jari
+  const [unassignedUsers, setUnassignedUsers] = useState([]);
+  const [selectedFpId, setSelectedFpId] = useState("");
+  const [deviceConnected, setDeviceConnected] = useState(false);
+  const [deviceLoading, setDeviceLoading] = useState(true);
+  const [deviceError, setDeviceError] = useState("");
+
+  // Fetch unassigned users dari alat via backend
+  const fetchUnassignedUsers = useCallback(async () => {
+    setDeviceLoading(true);
+    setDeviceError("");
+
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/unassigned-users`);
+      const data = await response.json();
+
+      if (data.success) {
+        setUnassignedUsers(data.unassignedUsers);
+        setDeviceConnected(true);
+
+        // Auto-select user pertama (yang paling baru di-enroll)
+        if (data.unassignedUsers.length > 0) {
+          // Ambil yang terakhir (User ID terbesar = paling baru di-enroll)
+          const latest = data.unassignedUsers[data.unassignedUsers.length - 1];
+          setSelectedFpId(latest.uid);
+        } else {
+          setSelectedFpId("");
+        }
+      } else {
+        setDeviceConnected(false);
+        setDeviceError(data.message || "Gagal mengambil data dari mesin");
+      }
+    } catch (error) {
+      setDeviceConnected(false);
+      setDeviceError("Backend tidak terhubung. Pastikan server backend sedang berjalan.");
+      console.error("Error fetch unassigned users:", error);
+    }
+
+    setDeviceLoading(false);
+  }, []);
+
+  // Fetch saat halaman dibuka
+  useEffect(() => {
+    fetchUnassignedUsers();
+  }, [fetchUnassignedUsers]);
 
   const formatRupiah = (num) => {
     return "Rp " + num.toLocaleString("id-ID");
@@ -41,25 +91,35 @@ function TambahMember() {
       newErrors.nomorHp = "Format: 08xxxxxxxxxx (10-13 digit)";
     }
 
-    if (!formData.fingerprintId.trim()) {
-      newErrors.fingerprintId = "Fingerprint ID tidak boleh kosong";
-    } else if (!/^\d+$/.test(formData.fingerprintId)) {
-      newErrors.fingerprintId = "Fingerprint ID hanya boleh angka";
-    }
-
     if (!formData.paketMembership) {
       newErrors.paketMembership = "Pilih paket membership";
+    }
+
+    if (!selectedFpId) {
+      newErrors.fingerprintId = "Belum ada sidik jari yang terdaftar di alat. Daftarkan sidik jari member di mesin terlebih dahulu, lalu klik tombol Refresh.";
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleChange = (e) => {
+  const handleChange = async (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
     if (errors[name]) {
       setErrors({ ...errors, [name]: "" });
+    }
+
+    // Cek nama duplikat
+    if (name === "nama" && value.trim().length >= 2) {
+      const exist = await cekNamaMemberExist(value);
+      if (exist) {
+        setNamaWarning(`Nama "${value.trim()}" sudah terdaftar di sistem.`);
+      } else {
+        setNamaWarning("");
+      }
+    } else if (name === "nama") {
+      setNamaWarning("");
     }
   };
 
@@ -70,17 +130,23 @@ function TambahMember() {
     if (validate()) {
       setLoading(true);
       try {
-        const result = await addMember(formData);
+        const result = await addMember({
+          ...formData,
+          fingerprintId: selectedFpId,
+        });
         setSuccessMsg(
-          `Member "${formData.nama}" berhasil ditambahkan dengan ID ${result.memberId}. Fingerprint ID: ${formData.fingerprintId} telah terhubung. Status membership: Aktif.`
+          `Member "${formData.nama}" berhasil ditambahkan dengan ID ${result.memberId}. Fingerprint ID: ${selectedFpId} (dari alat sidik jari).`
         );
         setFormData({
           nama: "",
           nomorHp: "",
-          fingerprintId: "",
           paketMembership: "",
         });
         setErrors({});
+        setNamaWarning("");
+
+        // Refresh daftar unassigned users
+        await fetchUnassignedUsers();
       } catch (error) {
         console.error("Error tambah member:", error);
         setErrors({ submit: "Gagal menyimpan data. Coba lagi." });
@@ -93,11 +159,11 @@ function TambahMember() {
     setFormData({
       nama: "",
       nomorHp: "",
-      fingerprintId: "",
       paketMembership: "",
     });
     setErrors({});
     setSuccessMsg("");
+    setNamaWarning("");
   };
 
   return (
@@ -112,9 +178,11 @@ function TambahMember() {
         <div className="info-box-enrollment">
           <strong>Langkah Pendaftaran Member:</strong>
           <p>
-            1. Daftarkan sidik jari member di mesin ZKTeco terlebih dahulu dan catat User ID-nya.
+            1. Daftarkan sidik jari member di mesin ZKTeco terlebih dahulu.
             <br />
-            2. Masukkan data member beserta Fingerprint ID (User ID dari mesin) pada form di bawah ini.
+            2. Klik tombol <strong>Refresh</strong> pada kolom Fingerprint ID untuk mendeteksi User ID baru dari alat.
+            <br />
+            3. Pilih Fingerprint ID yang sesuai, isi data member, lalu klik Tambah Member.
           </p>
         </div>
 
@@ -131,6 +199,92 @@ function TambahMember() {
         )}
 
         <div className="form-body">
+          {/* Fingerprint ID (dari alat) */}
+          <div className="form-group">
+            <label className="form-label">
+              Fingerprint ID <span className="required">*</span>
+            </label>
+
+            {deviceLoading ? (
+              <div className="device-status loading">
+                Mengambil data dari mesin sidik jari...
+              </div>
+            ) : !deviceConnected ? (
+              <div className="device-status error">
+                <span>⚠ {deviceError}</span>
+                <button
+                  type="button"
+                  className="btn-refresh"
+                  onClick={fetchUnassignedUsers}
+                >
+                  Coba Lagi
+                </button>
+              </div>
+            ) : unassignedUsers.length === 0 ? (
+              <div className="device-status warning">
+                <span>
+                  Tidak ada User ID baru di alat. Daftarkan sidik jari member di mesin terlebih dahulu.
+                </span>
+                <button
+                  type="button"
+                  className="btn-refresh"
+                  onClick={fetchUnassignedUsers}
+                >
+                  Refresh
+                </button>
+              </div>
+            ) : (
+              <div className="fingerprint-select-wrapper">
+                {unassignedUsers.length === 1 ? (
+                  // Kalau cuma 1, tampilkan langsung sebagai readonly
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={`${unassignedUsers[0].uid} (terdeteksi dari alat)`}
+                    readOnly
+                    style={{ backgroundColor: "#e8f5e9", cursor: "default", fontWeight: "600" }}
+                  />
+                ) : (
+                  // Kalau lebih dari 1, tampilkan dropdown
+                  <select
+                    className={`form-select ${errors.fingerprintId ? "input-error" : ""}`}
+                    value={selectedFpId}
+                    onChange={(e) => {
+                      setSelectedFpId(e.target.value);
+                      if (errors.fingerprintId) {
+                        setErrors({ ...errors, fingerprintId: "" });
+                      }
+                    }}
+                  >
+                    <option value="">-- Pilih Fingerprint ID --</option>
+                    {unassignedUsers.map((u) => (
+                      <option key={u.uid} value={u.uid}>
+                        User ID: {u.uid} {u.name ? `(${u.name})` : ""}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                <button
+                  type="button"
+                  className="btn-refresh"
+                  onClick={fetchUnassignedUsers}
+                >
+                  Refresh
+                </button>
+              </div>
+            )}
+
+            {errors.fingerprintId && (
+              <span className="error-text">{errors.fingerprintId}</span>
+            )}
+
+            <span className="form-hint">
+              {deviceConnected
+                ? `Mesin terhubung — ${unassignedUsers.length} User ID baru terdeteksi`
+                : "Mesin tidak terhubung"}
+            </span>
+          </div>
+
           {/* Nama */}
           <div className="form-group">
             <label className="form-label">
@@ -145,6 +299,11 @@ function TambahMember() {
               onChange={handleChange}
             />
             {errors.nama && <span className="error-text">{errors.nama}</span>}
+            {namaWarning && !errors.nama && (
+              <span className="error-text" style={{ color: "#e8a838" }}>
+                ⚠ {namaWarning}
+              </span>
+            )}
           </div>
 
           {/* Nomor HP */}
@@ -165,27 +324,6 @@ function TambahMember() {
             </span>
             {errors.nomorHp && (
               <span className="error-text">{errors.nomorHp}</span>
-            )}
-          </div>
-
-          {/* Fingerprint ID */}
-          <div className="form-group">
-            <label className="form-label">
-              Fingerprint ID <span className="required">*</span>
-            </label>
-            <input
-              type="text"
-              name="fingerprintId"
-              className={`form-input ${errors.fingerprintId ? "input-error" : ""}`}
-              placeholder="Masukkan User ID dari mesin ZKTeco"
-              value={formData.fingerprintId}
-              onChange={handleChange}
-            />
-            <span className="form-hint">
-              User ID yang terdaftar di mesin fingerprint saat enrollment sidik jari
-            </span>
-            {errors.fingerprintId && (
-              <span className="error-text">{errors.fingerprintId}</span>
             )}
           </div>
 

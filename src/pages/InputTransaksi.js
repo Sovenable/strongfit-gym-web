@@ -3,12 +3,14 @@ import {
   onMembersSnapshot,
   addTransaksiMembership,
   hitungStatusMembership,
+  onTransaksiSnapshot,
 } from "../services/firebaseService";
 import "./InputTransaksi.css";
 
 const paketList = [
   { nama: "1 Bulan", harga: 150000, durasiHari: 30 },
   { nama: "3 Bulan", harga: 400000, durasiHari: 90 },
+  { nama: "6 Bulan", harga: 750000, durasiHari: 180 },
 ];
 
 function InputTransaksi() {
@@ -23,10 +25,22 @@ function InputTransaksi() {
   const [loading, setLoading] = useState(false);
   const dropdownRef = useRef(null);
 
+  // State untuk riwayat transaksi
+  const [transaksiList, setTransaksiList] = useState([]);
+  const [filterMode, setFilterMode] = useState("semua"); // "semua" atau "member"
+
   // ===== Realtime listener: Members =====
   useEffect(() => {
     const unsubscribe = onMembersSnapshot((data) => {
       setMembers(data);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // ===== Realtime listener: Transaksi =====
+  useEffect(() => {
+    const unsubscribe = onTransaksiSnapshot((data) => {
+      setTransaksiList(data);
     });
     return () => unsubscribe();
   }, []);
@@ -41,6 +55,12 @@ function InputTransaksi() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // ===== Filter transaksi berdasarkan mode =====
+  const filteredTransaksi =
+    filterMode === "member" && selectedMember
+      ? transaksiList.filter((t) => t.memberId === selectedMember.memberId)
+      : transaksiList;
 
   // ===== Cari member =====
   const filteredMembers = members.filter((m) => {
@@ -61,6 +81,8 @@ function InputTransaksi() {
     setSearchQuery(member.nama);
     setShowDropdown(false);
     if (errors.member) setErrors({ ...errors, member: "" });
+    // Auto-filter riwayat ke member ini
+    setFilterMode("member");
   };
 
   const handleSearchChange = (e) => {
@@ -68,6 +90,9 @@ function InputTransaksi() {
     setSearchQuery(value);
     setSelectedMember(null);
     setShowDropdown(value.length >= 1);
+    if (value.length === 0) {
+      setFilterMode("semua");
+    }
   };
 
   const handleSearchFocus = () => {
@@ -93,6 +118,16 @@ function InputTransaksi() {
     return date.toLocaleDateString("id-ID", {
       day: "numeric",
       month: "long",
+      year: "numeric",
+    });
+  };
+
+  const formatTanggalShort = (timestamp) => {
+    if (!timestamp) return "-";
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return date.toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "short",
       year: "numeric",
     });
   };
@@ -128,12 +163,13 @@ function InputTransaksi() {
         `Transaksi membership "${selectedPaket}" untuk ${selectedMember.nama} berhasil dicatat! (${formatRupiah(getNominal())} - ${metodePembayaran})`
       );
 
-      // Reset form
+      // Reset form tapi keep filter ke semua
       setSearchQuery("");
       setSelectedMember(null);
       setSelectedPaket("");
       setMetodePembayaran("");
       setErrors({});
+      setFilterMode("semua");
     } catch (error) {
       console.error("Error transaksi:", error);
       setErrors({ submit: "Gagal menyimpan transaksi. Coba lagi." });
@@ -149,6 +185,7 @@ function InputTransaksi() {
     setMetodePembayaran("");
     setErrors({});
     setSuccessMsg("");
+    setFilterMode("semua");
   };
 
   // ===== Status badge class =====
@@ -160,6 +197,14 @@ function InputTransaksi() {
     if (status === "Expired") return "status-badge status-expired";
     if (status.includes("Aktif")) return "status-badge status-aktif";
     return "status-badge status-default";
+  };
+
+  // ===== Metode badge class =====
+  const getMetodeClass = (metode) => {
+    if (metode === "Cash") return "metode-badge metode-cash";
+    if (metode === "QRIS") return "metode-badge metode-qris";
+    if (metode === "Transfer") return "metode-badge metode-transfer";
+    return "metode-badge";
   };
 
   return (
@@ -338,6 +383,88 @@ function InputTransaksi() {
           >
             {loading ? "Menyimpan..." : "Simpan Transaksi"}
           </button>
+        </div>
+      </div>
+
+      {/* ==================== RIWAYAT TRANSAKSI ==================== */}
+      <div className="form-card" style={{ marginTop: "24px" }}>
+        <div className="riwayat-header">
+          <h2 className="form-card-title">Riwayat Transaksi</h2>
+          <div className="riwayat-filter">
+            <button
+              type="button"
+              className={`filter-btn ${filterMode === "semua" ? "filter-active" : ""}`}
+              onClick={() => setFilterMode("semua")}
+            >
+              Semua
+            </button>
+            {selectedMember && (
+              <button
+                type="button"
+                className={`filter-btn ${filterMode === "member" ? "filter-active" : ""}`}
+                onClick={() => setFilterMode("member")}
+              >
+                {selectedMember.nama}
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="form-divider"></div>
+
+        {filteredTransaksi.length === 0 ? (
+          <div className="riwayat-empty">
+            {filterMode === "member" && selectedMember
+              ? `Belum ada riwayat transaksi untuk ${selectedMember.nama}.`
+              : "Belum ada riwayat transaksi."}
+          </div>
+        ) : (
+          <div className="riwayat-table-wrapper">
+            <table className="riwayat-table">
+              <thead>
+                <tr>
+                  <th>No</th>
+                  <th>Tanggal</th>
+                  <th>Member</th>
+                  <th>Paket</th>
+                  <th>Nominal</th>
+                  <th>Metode</th>
+                  <th>Masa Aktif</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredTransaksi.map((t, index) => (
+                  <tr key={t.id || index}>
+                    <td>{index + 1}</td>
+                    <td>{formatTanggalShort(t.tanggalTransaksi)}</td>
+                    <td>
+                      <div className="riwayat-member">
+                        <span className="riwayat-member-name">{t.namaMember}</span>
+                        <span className="riwayat-member-id">{t.memberId}</span>
+                      </div>
+                    </td>
+                    <td>{t.paketMembership}</td>
+                    <td className="riwayat-nominal">{formatRupiah(t.nominalPembayaran || 0)}</td>
+                    <td>
+                      <span className={getMetodeClass(t.metodePembayaran)}>
+                        {t.metodePembayaran}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="riwayat-masa-aktif">
+                        <span>{formatTanggalShort(t.tanggalMulai)}</span>
+                        <span className="riwayat-arrow">→</span>
+                        <span>{formatTanggalShort(t.tanggalExpired)}</span>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <div className="riwayat-footer">
+          Total: {filteredTransaksi.length} transaksi
         </div>
       </div>
     </div>

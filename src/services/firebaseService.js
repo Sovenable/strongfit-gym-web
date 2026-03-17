@@ -52,6 +52,7 @@ export const addMember = async (memberData) => {
   const now = new Date();
   let durasiHari = 30; // default 1 bulan
   if (memberData.paketMembership === "3 Bulan") durasiHari = 90;
+  if (memberData.paketMembership === "6 Bulan") durasiHari = 180;
 
   const tanggalExpired = new Date(now);
   tanggalExpired.setDate(tanggalExpired.getDate() + durasiHari);
@@ -192,7 +193,7 @@ export const addTransaksiMembership = async (transaksiData, memberDocId) => {
   const now = new Date();
   let durasiHari = 30;
   if (transaksiData.paketMembership === "3 Bulan") durasiHari = 90;
-
+  if (transaksiData.paketMembership === "6 Bulan") durasiHari = 180;
   // Cek apakah member masih aktif — kalau aktif, tambah dari tanggal expired lama
   const member = await getMemberById(memberDocId);
   let tanggalMulai = now;
@@ -236,7 +237,19 @@ export const addTransaksiMembership = async (transaksiData, memberDocId) => {
 
   return newTransaksi;
 };
-
+export const onTransaksiSnapshot = (callback) => {
+  const q = query(
+    collection(db, "transaksiMembership"),
+    orderBy("createdAt", "desc")
+  );
+  return onSnapshot(q, (snapshot) => {
+    const transaksi = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+    callback(transaksi);
+  });
+};
 // ==================== TAMU ====================
 
 // Tambah data tamu + otomatis masuk ke presensi
@@ -267,6 +280,23 @@ export const addTamu = async (tamuData) => {
   });
 
   return newTamu;
+};
+
+// ==================== VALIDASI ====================
+
+// Cek apakah nama member sudah terdaftar
+export const cekNamaMemberExist = async (nama) => {
+  const snapshot = await getDocs(collection(db, "members"));
+  const members = snapshot.docs.map((doc) => doc.data());
+  return members.some(
+    (m) => m.nama.toLowerCase() === nama.trim().toLowerCase()
+  );
+};
+
+// Ambil fingerprint ID berikutnya (jumlah member + 1)
+export const getNextFingerprintId = async () => {
+  const snapshot = await getDocs(collection(db, "members"));
+  return String(snapshot.size + 1);
 };
 
 // ==================== HELPER ====================

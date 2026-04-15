@@ -46,16 +46,16 @@ export const addMember = async (memberData) => {
   // Generate memberId otomatis: MBR001, MBR002, dst
   const snapshot = await getDocs(collection(db, "members"));
   const nextNum = snapshot.size + 1;
-  const memberId = "MBR" + String(nextNum).padStart(3, "0");
+  const memberId = "SFBDL" + String(nextNum).padStart(3, "0");
 
   // Hitung tanggal expired berdasarkan paket
   const now = new Date();
-  let durasiHari = 30; // default 1 bulan
-  if (memberData.paketMembership === "3 Bulan") durasiHari = 90;
-  if (memberData.paketMembership === "6 Bulan") durasiHari = 180;
+  let durasiBulan = 1;
+  if (memberData.paketMembership === "3 Bulan") durasiBulan = 3;
+  if (memberData.paketMembership === "6 Bulan") durasiBulan = 6;
 
   const tanggalExpired = new Date(now);
-  tanggalExpired.setDate(tanggalExpired.getDate() + durasiHari);
+  tanggalExpired.setMonth(tanggalExpired.getMonth() + durasiBulan);
 
   const newMember = {
     memberId: memberId,
@@ -87,13 +87,28 @@ export const updateMember = async (docId, updatedData) => {
 // Realtime listener semua member (untuk dashboard)
 export const onMembersSnapshot = (callback) => {
   const q = query(collection(db, "members"), orderBy("createdAt", "desc"));
-  return onSnapshot(q, (snapshot) => {
-    const members = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-    callback(members);
-  });
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const members = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      callback(members);
+    },
+    (error) => {
+      console.error("Error onMembersSnapshot:", error.message);
+      // Fallback: coba tanpa orderBy
+      const fallbackQ = query(collection(db, "members"));
+      return onSnapshot(fallbackQ, (snapshot) => {
+        const members = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        callback(members);
+      });
+    }
+  );
 };
 
 // ==================== PRESENSI ====================
@@ -161,19 +176,25 @@ export const onPresensiTodaySnapshot = (callback) => {
     where("tanggal", "==", tanggal)
   );
 
-  return onSnapshot(q, (snapshot) => {
-    const presensi = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-    // Sort manual di client (desc by waktuCheckIn)
-    presensi.sort((a, b) => {
-      const timeA = a.waktuCheckIn?.toDate ? a.waktuCheckIn.toDate() : new Date(a.waktuCheckIn || 0);
-      const timeB = b.waktuCheckIn?.toDate ? b.waktuCheckIn.toDate() : new Date(b.waktuCheckIn || 0);
-      return timeB - timeA;
-    });
-    callback(presensi);
-  });
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const presensi = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      presensi.sort((a, b) => {
+        const timeA = a.waktuCheckIn?.toDate ? a.waktuCheckIn.toDate() : new Date(a.waktuCheckIn || 0);
+        const timeB = b.waktuCheckIn?.toDate ? b.waktuCheckIn.toDate() : new Date(b.waktuCheckIn || 0);
+        return timeB - timeA;
+      });
+      callback(presensi);
+    },
+    (error) => {
+      console.error("Error onPresensiTodaySnapshot:", error.message);
+      callback([]);
+    }
+  );
 };
 
 // Tambah presensi (dipanggil dari backend fingerprint, tapi juga bisa manual)
@@ -191,9 +212,9 @@ export const addPresensi = async (presensiData) => {
 export const addTransaksiMembership = async (transaksiData, memberDocId) => {
   // Hitung tanggal baru
   const now = new Date();
-  let durasiHari = 30;
-  if (transaksiData.paketMembership === "3 Bulan") durasiHari = 90;
-  if (transaksiData.paketMembership === "6 Bulan") durasiHari = 180;
+  let durasiBulan = 1;
+  if (transaksiData.paketMembership === "3 Bulan") durasiBulan = 3;
+  if (transaksiData.paketMembership === "6 Bulan") durasiBulan = 6;
   // Cek apakah member masih aktif — kalau aktif, tambah dari tanggal expired lama
   const member = await getMemberById(memberDocId);
   let tanggalMulai = now;
@@ -210,7 +231,7 @@ export const addTransaksiMembership = async (transaksiData, memberDocId) => {
   }
 
   const tanggalExpiredBaru = new Date(tanggalMulai);
-  tanggalExpiredBaru.setDate(tanggalExpiredBaru.getDate() + durasiHari);
+  tanggalExpiredBaru.setMonth(tanggalExpiredBaru.getMonth() + durasiBulan);
 
   // Simpan transaksi
   const newTransaksi = {
@@ -242,13 +263,20 @@ export const onTransaksiSnapshot = (callback) => {
     collection(db, "transaksiMembership"),
     orderBy("createdAt", "desc")
   );
-  return onSnapshot(q, (snapshot) => {
-    const transaksi = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-    callback(transaksi);
-  });
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const transaksi = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      callback(transaksi);
+    },
+    (error) => {
+      console.error("Error onTransaksiSnapshot:", error.message);
+      callback([]);
+    }
+  );
 };
 // ==================== TAMU ====================
 
@@ -315,7 +343,15 @@ export function toMonthString(date) {
   const m = String(date.getMonth() + 1).padStart(2, "0");
   return `${y}-${m}`;
 }
-
+// Ambil semua transaksi berdasarkan memberId (untuk modal riwayat)
+export const getTransaksiByMemberId = async (memberId) => {
+  const q = query(
+    collection(db, "transaksiMembership"),
+    where("memberId", "==", memberId)
+  );
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+};
 // Hitung status membership berdasarkan tanggal expired
 export function hitungStatusMembership(tanggalExpired) {
   if (!tanggalExpired) return "Expired";

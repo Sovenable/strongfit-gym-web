@@ -188,4 +188,185 @@
   padding: 6px 8px;
   color: #888;
   font-size: 13px;
+}/* ===== CLICKABLE ROW ===== */
+.member-row-clickable:hover {
+  background-color: #f0f7ff;
+  transition: background-color 0.15s ease;
+}
+
+/* ===== MODAL ===== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.modal-card {
+  background: #fff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 560px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.modal-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0 0 4px;
+}
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #999;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+
+.modal-close-btn:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.modal-body {
+  padding: 20px 24px 24px;
+}
+
+.modal-subtitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: #555;
+  margin: 0 0 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ===== GRID 12 BULAN ===== */
+.bulan-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.bulan-item {
+  border-radius: 10px;
+  padding: 10px 8px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: 12px;
+  position: relative;
+}
+
+.bulan-aktif {
+  background: #e8f5e9;
+  border: 1.5px solid #4caf50;
+  color: #2e7d32;
+}
+
+.bulan-kosong {
+  background: #f5f5f5;
+  border: 1.5px solid #e0e0e0;
+  color: #aaa;
+}
+
+.bulan-pendek {
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.bulan-tahun {
+  font-size: 10px;
+  opacity: 0.7;
+}
+
+.bulan-check {
+  font-size: 11px;
+  color: #4caf50;
+  font-weight: 700;
+}
+
+/* ===== LEGEND ===== */
+.modal-legend {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 4px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #666;
+}
+
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.legend-dot-aktif {
+  background: #4caf50;
+}
+
+.legend-dot-kosong {
+  background: #e0e0e0;
+}
+
+/* ===== TRANSAKSI LIST ===== */
+.modal-transaksi-list {
+  border-top: 1px solid #f0f0f0;
+  padding-top: 4px;
+}
+
+.transaksi-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #f5f5f5;
+  gap: 8px;
+}
+
+.transaksi-paket {
+  font-weight: 600;
+  font-size: 13px;
+  color: #333;
+  min-width: 80px;
+}
+
+.transaksi-detail {
+  font-size: 12px;
+  color: #777;
+  flex: 1;
+}
+
+.transaksi-nominal {
+  font-size: 13px;
+  color: #4a90d9;
+  font-weight: 600;
 }

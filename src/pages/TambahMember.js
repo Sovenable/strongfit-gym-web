@@ -3,7 +3,7 @@ import { addMember, cekNamaMemberExist } from "../services/firebaseService";
 import "./TambahMember.css";
 
 // URL backend API (sesuaikan kalau beda)
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:3001";
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "http://192.168.1.10";
 
 const paketList = [
   { nama: "1 Bulan", harga: 150000, durasiHari: 30 },

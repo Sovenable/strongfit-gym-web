@@ -5,6 +5,11 @@ import "./TambahMember.css";
 // URL backend API (sesuaikan kalau beda)
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "http://192.168.1.10";
 
+// Header untuk bypass ngrok browser warning
+const NGROK_HEADERS = {
+  'ngrok-skip-browser-warning': 'true',
+};
+
 const paketList = [
   { nama: "1 Bulan", harga: 150000, durasiHari: 30 },
   { nama: "3 Bulan", harga: 400000, durasiHari: 90 },
@@ -36,16 +41,16 @@ function TambahMember() {
     setDeviceError("");
 
     try {
-      const response = await fetch(`${BACKEND_URL}/api/unassigned-users`);
+      const response = await fetch(`${BACKEND_URL}/api/unassigned-users`, {
+        headers: NGROK_HEADERS,
+      });
       const data = await response.json();
 
       if (data.success) {
         setUnassignedUsers(data.unassignedUsers);
         setDeviceConnected(true);
 
-        // Auto-select user pertama (yang paling baru di-enroll)
         if (data.unassignedUsers.length > 0) {
-          // Ambil yang terakhir (User ID terbesar = paling baru di-enroll)
           const latest = data.unassignedUsers[data.unassignedUsers.length - 1];
           setSelectedFpId(latest.uid);
         } else {
@@ -64,7 +69,6 @@ function TambahMember() {
     setDeviceLoading(false);
   }, []);
 
-  // Fetch saat halaman dibuka
   useEffect(() => {
     fetchUnassignedUsers();
   }, [fetchUnassignedUsers]);
@@ -73,7 +77,6 @@ function TambahMember() {
     return "Rp " + num.toLocaleString("id-ID");
   };
 
-  // Validasi form
   const validate = () => {
     const newErrors = {};
 
@@ -110,7 +113,6 @@ function TambahMember() {
       setErrors({ ...errors, [name]: "" });
     }
 
-    // Cek nama duplikat
     if (name === "nama" && value.trim().length >= 2) {
       const exist = await cekNamaMemberExist(value);
       if (exist) {
@@ -137,15 +139,9 @@ function TambahMember() {
         setSuccessMsg(
           `Member "${formData.nama}" berhasil ditambahkan dengan ID ${result.memberId}. Fingerprint ID: ${selectedFpId} (dari alat sidik jari).`
         );
-        setFormData({
-          nama: "",
-          nomorHp: "",
-          paketMembership: "",
-        });
+        setFormData({ nama: "", nomorHp: "", paketMembership: "" });
         setErrors({});
         setNamaWarning("");
-
-        // Refresh daftar unassigned users
         await fetchUnassignedUsers();
       } catch (error) {
         console.error("Error tambah member:", error);
@@ -156,11 +152,7 @@ function TambahMember() {
   };
 
   const handleBatal = () => {
-    setFormData({
-      nama: "",
-      nomorHp: "",
-      paketMembership: "",
-    });
+    setFormData({ nama: "", nomorHp: "", paketMembership: "" });
     setErrors({});
     setSuccessMsg("");
     setNamaWarning("");
@@ -174,7 +166,6 @@ function TambahMember() {
         <h2 className="form-card-title">Form Pendaftaran Member Baru</h2>
         <div className="form-divider"></div>
 
-        {/* Info box enrollment */}
         <div className="info-box-enrollment">
           <strong>Langkah Pendaftaran Member:</strong>
           <p>
@@ -199,7 +190,6 @@ function TambahMember() {
         )}
 
         <div className="form-body">
-          {/* Fingerprint ID (dari alat) */}
           <div className="form-group">
             <label className="form-label">
               Fingerprint ID <span className="required">*</span>
@@ -236,7 +226,6 @@ function TambahMember() {
             ) : (
               <div className="fingerprint-select-wrapper">
                 {unassignedUsers.length === 1 ? (
-                  // Kalau cuma 1, tampilkan langsung sebagai readonly
                   <input
                     type="text"
                     className="form-input"
@@ -245,7 +234,6 @@ function TambahMember() {
                     style={{ backgroundColor: "#e8f5e9", cursor: "default", fontWeight: "600" }}
                   />
                 ) : (
-                  // Kalau lebih dari 1, tampilkan dropdown
                   <select
                     className={`form-select ${errors.fingerprintId ? "input-error" : ""}`}
                     value={selectedFpId}
@@ -285,7 +273,6 @@ function TambahMember() {
             </span>
           </div>
 
-          {/* Nama */}
           <div className="form-group">
             <label className="form-label">
               Nama <span className="required">*</span>
@@ -306,7 +293,6 @@ function TambahMember() {
             )}
           </div>
 
-          {/* Nomor HP */}
           <div className="form-group">
             <label className="form-label">
               Nomor HP <span className="required">*</span>
@@ -327,16 +313,13 @@ function TambahMember() {
             )}
           </div>
 
-          {/* Paket Membership */}
           <div className="form-group">
             <label className="form-label">
               Paket Membership <span className="required">*</span>
             </label>
             <select
               name="paketMembership"
-              className={`form-select ${
-                errors.paketMembership ? "input-error" : ""
-              }`}
+              className={`form-select ${errors.paketMembership ? "input-error" : ""}`}
               value={formData.paketMembership}
               onChange={handleChange}
             >

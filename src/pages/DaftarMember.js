@@ -1,21 +1,9 @@
 import React, { useState, useEffect } from "react";
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
-import {
   onMembersSnapshot,
   hitungStatusMembership,
   getTransaksiByMemberId,
 } from "../services/firebaseService";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "../config/firebase";
 import "./DaftarMember.css";
 
 // ===== Helper: hitung bulan-bulan yang ter-cover oleh satu periode =====
@@ -48,14 +36,6 @@ function DaftarMember() {
   const [modalTransaksi, setModalTransaksi] = useState([]);
   const [modalLoading, setModalLoading] = useState(false);
 
-  // ===== Chart =====
-  const [dataChart, setDataChart] = useState([]);
-  const [chartLoading, setChartLoading] = useState(true);
-  const [allMembersData, setAllMembersData] = useState([]);
-
-  // ===== Modal chart (klik titik) =====
-  const [chartModal, setChartModal] = useState(null);
-
   const itemsPerPage = 7;
 
   // ===== Realtime listener: Members =====
@@ -66,59 +46,6 @@ function DaftarMember() {
     });
     return () => unsubscribe();
   }, []);
-
-  // ===== Fetch data chart =====
-  useEffect(() => {
-    const fetchChartData = async () => {
-      setChartLoading(true);
-      try {
-        const tahun = new Date().getFullYear();
-        const bulanLabels = [];
-        for (let i = 0; i < 12; i++) {
-          const d = new Date(tahun, i, 1);
-          bulanLabels.push({
-            key: `${tahun}-${String(i + 1).padStart(2, "0")}`,
-            label: d.toLocaleDateString("id-ID", { month: "short" }),
-            count: 0,
-          });
-        }
-
-        const snapMembers = await getDocs(collection(db, "members"));
-        const rawMembers = snapMembers.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-        setAllMembersData(rawMembers);
-
-        rawMembers.forEach((m) => {
-          const bulanTercover = getBulanYangTercover(m.tanggalMulai, m.tanggalExpired);
-          bulanTercover.forEach((bulan) => {
-            const entry = bulanLabels.find((b) => b.key === bulan);
-            if (entry) entry.count += 1;
-          });
-        });
-
-        setDataChart(bulanLabels);
-      } catch (err) {
-        console.error("Error fetch chart:", err);
-        setDataChart([]);
-      }
-      setChartLoading(false);
-    };
-
-    fetchChartData();
-  }, []);
-
-  // ===== Klik titik di chart =====
-  const handleChartClick = (data) => {
-    if (!data || !data.activePayload || data.activeTooltipIndex === undefined) return;
-    const bulanKey = dataChart[data.activeTooltipIndex].key;
-    const bulanLabel = dataChart[data.activeTooltipIndex].label;
-
-    const membersAktifDiBulan = allMembersData.filter((m) => {
-      const tercover = getBulanYangTercover(m.tanggalMulai, m.tanggalExpired);
-      return tercover.includes(bulanKey);
-    });
-
-    setChartModal({ bulan: bulanKey, label: bulanLabel, members: membersAktifDiBulan });
-  };
 
   // ===== Buka modal detail member =====
   const handleRowClick = async (member) => {
@@ -406,143 +333,6 @@ function DaftarMember() {
           </div>
         )}
       </div>
-
-      {/* ===== CHART MEMBER AKTIF PER BULAN ===== */}
-      <div className="card-section">
-        <h2 className="section-title">Grafik Member Aktif per Bulan</h2>
-        <p style={{ fontSize: "13px", color: "#888", marginBottom: "16px" }}>
-          Klik titik di grafik untuk melihat detail member yang aktif di bulan tersebut
-        </p>
-        {chartLoading ? (
-          <p style={{ color: "#888", textAlign: "center", padding: "40px 0" }}>
-            Memuat data grafik...
-          </p>
-        ) : (
-          <div className="grafik-container">
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart
-                data={dataChart}
-                margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
-                onClick={handleChartClick}
-                style={{ cursor: "pointer" }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-                <XAxis dataKey="label" fontSize={12} tick={{ fill: "#666" }} />
-                <YAxis fontSize={12} tick={{ fill: "#666" }} allowDecimals={false} />
-                <Tooltip
-                  formatter={(value) => [`${value} member`, "Member Aktif"]}
-                  contentStyle={{
-                    borderRadius: "8px",
-                    border: "1px solid #e0e0e0",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                  }}
-                />
-                <Legend />
-               <Line
-                type="monotone"
-                dataKey="count"
-                name="Member Aktif"
-                stroke="#4a90d9"
-                strokeWidth={2}
-                dot={(props) => {
-                  const { cx, cy, index } = props;
-                  return (
-                    <circle
-                      key={index}
-                      cx={cx}
-                      cy={cy}
-                      r={5}
-                      fill="#4a90d9"
-                      stroke="#fff"
-                      strokeWidth={2}
-                      style={{ cursor: "pointer" }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const item = dataChart[index];
-                        const membersAktif = allMembersData.filter((m) => {
-                          const tercover = getBulanYangTercover(m.tanggalMulai, m.tanggalExpired);
-                          return tercover.includes(item.key);
-                        });
-                        setChartModal({ bulan: item.key, label: item.label, members: membersAktif });
-                      }}
-                    />
-                  );
-                }}
-                activeDot={(props) => {
-                  const { cx, cy, index } = props;
-                  return (
-                    <circle
-                      key={`active-${index}`}
-                      cx={cx}
-                      cy={cy}
-                      r={7}
-                      fill="#4a90d9"
-                      stroke="#fff"
-                      strokeWidth={2}
-                      style={{ cursor: "pointer" }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const item = dataChart[index];
-                        const membersAktif = allMembersData.filter((m) => {
-                          const tercover = getBulanYangTercover(m.tanggalMulai, m.tanggalExpired);
-                          return tercover.includes(item.key);
-                        });
-                        setChartModal({ bulan: item.key, label: item.label, members: membersAktif });
-                      }}
-                    />
-                  );
-                }}
-              />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        )}
-      </div>
-
-      {/* ===== MODAL CHART — detail member aktif per bulan ===== */}
-      {chartModal && (
-        <div className="modal-overlay" onClick={() => setChartModal(null)}>
-          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <div>
-                <h2 className="modal-title">Member Aktif — {chartModal.label}</h2>
-                <span style={{ fontSize: "13px", color: "#888" }}>
-                  {chartModal.members.length} member aktif di bulan ini
-                </span>
-              </div>
-              <button className="modal-close-btn" onClick={() => setChartModal(null)}>✕</button>
-            </div>
-            <div className="modal-body">
-              {chartModal.members.length > 0 ? (
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th style={{ width: "100px" }}>No Member</th>
-                      <th>Nama</th>
-                      <th style={{ width: "140px" }}>Tanggal Expired</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {chartModal.members
-                      .sort((a, b) => (a.memberId > b.memberId ? 1 : -1))
-                      .map((m) => (
-                        <tr key={m.id}>
-                          <td>{m.memberId}</td>
-                          <td>{m.nama}</td>
-                          <td>{formatTanggal(m.tanggalExpired)}</td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
-              ) : (
-                <p style={{ textAlign: "center", color: "#888", padding: "24px 0" }}>
-                  Tidak ada member aktif di bulan ini
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ===== MODAL DETAIL MEMBER — riwayat perpanjangan ===== */}
       {selectedMember && (

@@ -10,7 +10,6 @@ import TambahMember from "./pages/TambahMember";
 import InputTransaksi from "./pages/InputTransaksi";
 import LaporanPresensi from "./pages/LaporanPresensi";
 import PendataanTamu from "./pages/PendataanTamu";
-import SeedPage from "./pages/SeedPage";
 import "./App.css";
 
 function App() {
@@ -30,8 +29,6 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/seed" element={<SeedPage />} />
-
         <Route
           path="/login"
           element={user ? <Navigate to="/" replace /> : <Login />}

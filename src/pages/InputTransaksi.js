@@ -25,11 +25,9 @@ function InputTransaksi() {
   const [loading, setLoading] = useState(false);
   const dropdownRef = useRef(null);
 
-  // State untuk riwayat transaksi
   const [transaksiList, setTransaksiList] = useState([]);
-  const [filterMode, setFilterMode] = useState("semua"); // "semua" atau "member"
+  const [filterMode, setFilterMode] = useState("semua");
 
-  // ===== Realtime listener: Members =====
   useEffect(() => {
     const unsubscribe = onMembersSnapshot((data) => {
       setMembers(data);
@@ -37,7 +35,6 @@ function InputTransaksi() {
     return () => unsubscribe();
   }, []);
 
-  // ===== Realtime listener: Transaksi =====
   useEffect(() => {
     const unsubscribe = onTransaksiSnapshot((data) => {
       setTransaksiList(data);
@@ -45,7 +42,6 @@ function InputTransaksi() {
     return () => unsubscribe();
   }, []);
 
-  // ===== Close dropdown saat klik di luar =====
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -56,13 +52,11 @@ function InputTransaksi() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // ===== Filter transaksi berdasarkan mode =====
   const filteredTransaksi =
     filterMode === "member" && selectedMember
       ? transaksiList.filter((t) => t.memberId === selectedMember.memberId)
       : transaksiList;
 
-  // ===== Cari member =====
   const filteredMembers = members.filter((m) => {
     if (!searchQuery || searchQuery.length < 1) return false;
     const q = searchQuery.toLowerCase();
@@ -81,7 +75,6 @@ function InputTransaksi() {
     setSearchQuery(member.nama);
     setShowDropdown(false);
     if (errors.member) setErrors({ ...errors, member: "" });
-    // Auto-filter riwayat ke member ini
     setFilterMode("member");
   };
 
@@ -101,7 +94,6 @@ function InputTransaksi() {
     }
   };
 
-  // ===== Harga otomatis =====
   const getNominal = () => {
     const paket = paketList.find((p) => p.nama === selectedPaket);
     return paket ? paket.harga : 0;
@@ -111,7 +103,6 @@ function InputTransaksi() {
     return "Rp " + num.toLocaleString("id-ID");
   };
 
-  // ===== Format tanggal dari Timestamp =====
   const formatTanggal = (timestamp) => {
     if (!timestamp) return "-";
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
@@ -132,7 +123,6 @@ function InputTransaksi() {
     });
   };
 
-  // ===== Validasi =====
   const validate = () => {
     const newErrors = {};
     if (!selectedMember) newErrors.member = "Pilih member terlebih dahulu";
@@ -142,7 +132,6 @@ function InputTransaksi() {
     return Object.keys(newErrors).length === 0;
   };
 
-  // ===== Submit ke Firestore =====
   const handleSubmit = async () => {
     setSuccessMsg("");
     if (!validate()) return;
@@ -163,7 +152,6 @@ function InputTransaksi() {
         `Transaksi membership "${selectedPaket}" untuk ${selectedMember.nama} berhasil dicatat! (${formatRupiah(getNominal())} - ${metodePembayaran})`
       );
 
-      // Reset form tapi keep filter ke semua
       setSearchQuery("");
       setSelectedMember(null);
       setSelectedPaket("");
@@ -177,7 +165,6 @@ function InputTransaksi() {
     setLoading(false);
   };
 
-  // ===== Reset form =====
   const handleBatal = () => {
     setSearchQuery("");
     setSelectedMember(null);
@@ -188,7 +175,6 @@ function InputTransaksi() {
     setFilterMode("semua");
   };
 
-  // ===== Status badge class =====
   const getStatusClass = (status) => {
     if (!status || status === "-") return "status-badge status-default";
     if (status === "Belum Aktif") return "status-badge status-default";
@@ -199,7 +185,6 @@ function InputTransaksi() {
     return "status-badge status-default";
   };
 
-  // ===== Metode badge class =====
   const getMetodeClass = (metode) => {
     if (metode === "Cash") return "metode-badge metode-cash";
     if (metode === "QRIS") return "metode-badge metode-qris";
@@ -228,7 +213,6 @@ function InputTransaksi() {
         )}
 
         <div className="form-body">
-          {/* Cari Member */}
           <div className="form-group">
             <label className="form-label">
               Cari Member <span className="required">*</span>
@@ -277,7 +261,6 @@ function InputTransaksi() {
             )}
           </div>
 
-          {/* Info Member yang Dipilih */}
           {selectedMember && (
             <div className="member-info-card">
               <h3 className="member-info-title">Informasi Member</h3>
@@ -309,7 +292,6 @@ function InputTransaksi() {
             </div>
           )}
 
-          {/* Pilih Paket */}
           <div className="form-group">
             <label className="form-label">
               Paket Membership <span className="required">*</span>
@@ -334,7 +316,6 @@ function InputTransaksi() {
             )}
           </div>
 
-          {/* Nominal Otomatis */}
           {selectedPaket && (
             <div className="form-group">
               <label className="form-label">Nominal Pembayaran</label>
@@ -344,7 +325,6 @@ function InputTransaksi() {
             </div>
           )}
 
-          {/* Metode Pembayaran */}
           <div className="form-group">
             <label className="form-label">
               Metode Pembayaran <span className="required">*</span>
@@ -386,7 +366,6 @@ function InputTransaksi() {
         </div>
       </div>
 
-      {/* ==================== RIWAYAT TRANSAKSI ==================== */}
       <div className="form-card" style={{ marginTop: "24px" }}>
         <div className="riwayat-header">
           <h2 className="form-card-title">Riwayat Transaksi</h2>

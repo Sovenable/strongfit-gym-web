@@ -14,17 +14,15 @@ import SeedPage from "./pages/SeedPage";
 import "./App.css";
 
 function App() {
-  const [user, setUser] = useState(undefined); // undefined = masih loading
+  const [user, setUser] = useState(undefined);
 
   useEffect(() => {
-    // Firebase listener — otomatis detect login/logout
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser); // null = belum login, object = sudah login
+      setUser(currentUser);
     });
     return () => unsubscribe();
   }, []);
 
-  // Masih cek status auth — tampilkan loading dulu
   if (user === undefined) {
     return <div style={{ padding: 40, textAlign: "center" }}>Memuat...</div>;
   }
@@ -32,16 +30,13 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* Seed page — tidak perlu auth */}
         <Route path="/seed" element={<SeedPage />} />
 
-        {/* Login page — redirect ke dashboard kalau sudah login */}
         <Route
           path="/login"
           element={user ? <Navigate to="/" replace /> : <Login />}
         />
 
-        {/* Semua halaman lain — redirect ke login kalau belum login */}
         <Route
           path="/*"
           element={

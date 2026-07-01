@@ -12,7 +12,7 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [countdown, setCountdown] = useState(null);
   const [pollingInterval, setPollingInterval] = useState(15);
-  // ===== Realtime listener: Members =====
+
   useEffect(() => {
     const unsubscribe = onMembersSnapshot((data) => {
       setMembers(data);
@@ -21,14 +21,13 @@ function Dashboard() {
     return () => unsubscribe();
   }, []);
 
-  // ===== Realtime listener: Presensi Hari Ini =====
   useEffect(() => {
     const unsubscribe = onPresensiTodaySnapshot((data) => {
       setPresensiHariIni(data);
     });
     return () => unsubscribe();
   }, []);
-  // Fetch polling interval dari backend (sekali saat mount)
+
   useEffect(() => {
     const fetchPollingInfo = async () => {
       try {
@@ -38,13 +37,12 @@ function Dashboard() {
         setPollingInterval(detik);
         setCountdown(detik);
       } catch {
-        setCountdown(15); // default kalau backend offline
+        setCountdown(15);
       }
     };
     fetchPollingInfo();
   }, []);
 
-  // Countdown timer — reset tiap kali habis
   useEffect(() => {
     if (countdown === null) return;
     if (countdown <= 0) {
@@ -54,7 +52,7 @@ function Dashboard() {
     const timer = setTimeout(() => setCountdown((c) => c - 1), 1000);
     return () => clearTimeout(timer);
   }, [countdown, pollingInterval]);
-  // ===== Hitung statistik =====
+
   const memberAktif = members.filter((m) => {
     const status = hitungStatusMembership(m.tanggalExpired);
     return status !== "Expired" && status !== "Belum Aktif";
@@ -67,7 +65,6 @@ function Dashboard() {
 
   const checkInHariIni = presensiHariIni.length;
 
-  // ===== Format waktu dari Timestamp =====
   const formatWaktu = (timestamp) => {
     if (!timestamp) return "-";
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
@@ -77,7 +74,6 @@ function Dashboard() {
     });
   };
 
-  // ===== Status badge class =====
   const getStatusClass = (status) => {
     if (!status || status === "-") return "status-badge status-default";
     if (status === "Belum Aktif") return "status-badge status-default";
@@ -102,7 +98,6 @@ function Dashboard() {
   return (
     <div className="dashboard">
       <h1 className="page-title">Dashboard</h1>
-      {/* Countdown refresh */}
       {countdown !== null && (
         <div className="refresh-countdown">
           <span className="refresh-icon">🔄</span>
@@ -115,7 +110,6 @@ function Dashboard() {
           </span>
         </div>
       )}
-      {/* ===== STAT CARDS ===== */}
       <div className="stat-cards">
         <div className="stat-card card-member">
           <span className="stat-label">MEMBER AKTIF</span>
@@ -131,7 +125,6 @@ function Dashboard() {
         </div>
       </div>
 
-      {/* ===== LOG CHECK-IN TERBARU ===== */}
       <div className="card-section">
         <h2 className="section-title">LOG CHECK-IN TERBARU</h2>
         <div className="table-wrapper">

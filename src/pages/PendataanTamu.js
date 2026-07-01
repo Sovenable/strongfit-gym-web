@@ -12,7 +12,6 @@ function PendataanTamu() {
   const [successMsg, setSuccessMsg] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Tanggal hari ini otomatis
   const today = new Date();
   const tanggalHariIni = today.toLocaleDateString("id-ID", {
     weekday: "long",
@@ -96,13 +95,11 @@ function PendataanTamu() {
         )}
 
         <div className="form-body">
-          {/* Tanggal Kunjungan (otomatis) */}
           <div className="form-group">
             <label className="form-label">Tanggal Kunjungan</label>
             <div className="date-auto">{tanggalHariIni}</div>
           </div>
 
-          {/* Nama Tamu */}
           <div className="form-group">
             <label className="form-label">
               Nama Tamu <span className="required">*</span>
@@ -118,7 +115,6 @@ function PendataanTamu() {
             {errors.nama && <span className="error-text">{errors.nama}</span>}
           </div>
 
-          {/* Nomor HP */}
           <div className="form-group">
             <label className="form-label">
               Nomor HP <span className="required">*</span>

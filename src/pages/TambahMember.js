@@ -2,10 +2,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import { addMember, cekNamaMemberExist } from "../services/firebaseService";
 import "./TambahMember.css";
 
-// URL backend API (sesuaikan kalau beda)
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "http://192.168.1.10";
 
-// Header untuk bypass ngrok browser warning
 const NGROK_HEADERS = {
   'ngrok-skip-browser-warning': 'true',
 };
@@ -28,14 +26,12 @@ function TambahMember() {
   const [loading, setLoading] = useState(false);
   const [namaWarning, setNamaWarning] = useState("");
 
-  // State untuk data dari alat sidik jari
   const [unassignedUsers, setUnassignedUsers] = useState([]);
   const [selectedFpId, setSelectedFpId] = useState("");
   const [deviceConnected, setDeviceConnected] = useState(false);
   const [deviceLoading, setDeviceLoading] = useState(true);
   const [deviceError, setDeviceError] = useState("");
 
-  // Fetch unassigned users dari alat via backend
   const fetchUnassignedUsers = useCallback(async () => {
     setDeviceLoading(true);
     setDeviceError("");

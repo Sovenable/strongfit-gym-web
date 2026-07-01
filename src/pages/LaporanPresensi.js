@@ -27,7 +27,7 @@ import { db } from "../config/firebase";
 import "./LaporanPresensi.css";
 
 function LaporanPresensi() {
-  const [mode, setMode] = useState("harian"); // "harian" atau "bulanan"
+  const [mode, setMode] = useState("harian");
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedMonth, setSelectedMonth] = useState(toMonthString(new Date()));
   const [dataPresensi, setDataPresensi] = useState([]);
@@ -38,7 +38,6 @@ function LaporanPresensi() {
   const [dataGrafik, setDataGrafik] = useState([]);
   const [periodeGrafik, setPeriodeGrafik] = useState("7hari");
 
-  // ===== Realtime listener: Members (untuk cek status) =====
   useEffect(() => {
     const unsubscribe = onMembersSnapshot((data) => {
       setMembers(data);
@@ -46,7 +45,6 @@ function LaporanPresensi() {
     return () => unsubscribe();
   }, []);
 
-  // ===== Fetch presensi sesuai mode =====
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -69,7 +67,6 @@ function LaporanPresensi() {
     fetchData();
   }, [selectedDate, selectedMonth, mode]);
 
-  // ===== Fetch data grafik kunjungan =====
   useEffect(() => {
     const fetchGrafik = async () => {
       const hari = periodeGrafik === "7hari" ? 7 : 30;
@@ -120,7 +117,6 @@ function LaporanPresensi() {
     fetchGrafik();
   }, [periodeGrafik]);
 
-  // ===== Helper: get member status from members list =====
   const getMemberStatus = (memberId) => {
     const member = members.find((m) => m.memberId === memberId);
     if (member) {
@@ -129,13 +125,10 @@ function LaporanPresensi() {
     return null;
   };
 
-  // ===== Filter data presensi =====
   const filteredPresensi = dataPresensi.filter((item) => {
-    // Filter tipe
     if (filterTipe === "Member" && item.tipe !== "Member") return false;
     if (filterTipe === "Tamu" && item.tipe !== "Tamu") return false;
 
-    // Filter status (hanya berlaku untuk Member)
     if (filterTipe === "Member" && filterStatus !== "Semua") {
       const currentStatus = getMemberStatus(item.memberId) || item.statusMembership;
       if (filterStatus === "Aktif" && currentStatus !== "Aktif") return false;
@@ -147,12 +140,10 @@ function LaporanPresensi() {
     return true;
   });
 
-  // ===== Hitung statistik =====
   const totalCheckIn = filteredPresensi.length;
   const totalMember = filteredPresensi.filter((d) => d.tipe === "Member").length;
   const totalTamu = filteredPresensi.filter((d) => d.tipe === "Tamu").length;
 
-  // ===== Navigasi tanggal =====
   const handlePrevDay = () => {
     const prev = new Date(selectedDate);
     prev.setDate(prev.getDate() - 1);
@@ -173,7 +164,6 @@ function LaporanPresensi() {
     setSelectedMonth(e.target.value);
   };
 
-  // ===== Format tanggal tampilan =====
   const formatTanggalDisplay = () => {
     return selectedDate.toLocaleDateString("id-ID", {
       weekday: "long",
@@ -192,7 +182,6 @@ function LaporanPresensi() {
     });
   };
 
-  // ===== Format waktu dari Timestamp =====
   const formatWaktu = (timestamp) => {
     if (!timestamp) return "-";
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
@@ -202,7 +191,6 @@ function LaporanPresensi() {
     });
   };
 
-  // ===== Format tanggal + waktu (untuk mode bulanan) =====
   const formatTanggalWaktu = (timestamp) => {
     if (!timestamp) return "-";
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
@@ -215,7 +203,6 @@ function LaporanPresensi() {
     });
   };
 
-  // ===== Status badge class =====
   const getStatusClass = (status) => {
     if (!status || status === "-") return "status-badge status-default";
     if (status === "Belum Aktif") return "status-badge status-default";
@@ -230,7 +217,6 @@ function LaporanPresensi() {
     <div className="laporan-presensi">
       <h1 className="page-title">Laporan Presensi</h1>
 
-      {/* ===== MODE TOGGLE ===== */}
       <div className="mode-toggle-wrapper">
         <div className="mode-toggle">
           <button
@@ -248,7 +234,6 @@ function LaporanPresensi() {
         </div>
       </div>
 
-      {/* ===== DATE / MONTH NAVIGATION ===== */}
       <div className="card-section">
         {mode === "harian" ? (
           <div className="date-nav">
@@ -283,7 +268,6 @@ function LaporanPresensi() {
         )}
       </div>
 
-      {/* ===== RINGKASAN CHECK-IN ===== */}
       <div className="checkin-stats">
         <div className="checkin-stat-item">
           <span className="checkin-stat-label">Total Check-In</span>
@@ -299,7 +283,6 @@ function LaporanPresensi() {
         </div>
       </div>
 
-      {/* ===== FILTER ===== */}
       <div className="card-section">
         <h2 className="section-title">Filter</h2>
         <div className="filter-row">
@@ -337,7 +320,6 @@ function LaporanPresensi() {
         </div>
       </div>
 
-      {/* ===== TABEL PRESENSI ===== */}
       <div className="card-section">
         <h2 className="section-title">Data Check-In</h2>
         {loading ? (
@@ -404,7 +386,6 @@ function LaporanPresensi() {
         )}
       </div>
 
-      {/* ===== GRAFIK KUNJUNGAN ===== */}
       <div className="card-section">
         <div className="section-header">
           <h2 className="section-title">Grafik Kunjungan</h2>

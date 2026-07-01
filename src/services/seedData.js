@@ -1,9 +1,3 @@
-// ============================================================
-// seedData.js
-// Jalankan SEKALI untuk mengisi Firestore dengan data dummy
-// Cara jalankan: buka browser, akses halaman /seed
-// ============================================================
-
 import {
   collection,
   addDoc,
@@ -12,8 +6,6 @@ import {
   getDocs,
 } from "firebase/firestore";
 import { db } from "../config/firebase";
-
-// ==================== DATA DUMMY ====================
 
 const dummyMembers = [
   { memberId: "MBR001", nama: "Ahmad Rizky", username: "ahmadrizky", nomorHp: "081234567801", fingerprintId: "1", paketMembership: "1 Bulan", daysFromNow: 5 },
@@ -38,13 +30,10 @@ const dummyMembers = [
   { memberId: "MBR020", nama: "Umar Bakri", username: "umarbakri", nomorHp: "081234567820", fingerprintId: "20", paketMembership: "1 Bulan", daysFromNow: -15 },
 ];
 
-// Paket membership
 const paketMembership = [
   { namaPaket: "1 Bulan", durasiHari: 30, harga: 150000, aktif: true },
   { namaPaket: "3 Bulan", durasiHari: 90, harga: 400000, aktif: true },
 ];
-
-// ==================== HELPER ====================
 
 function toDateString(date) {
   const y = date.getFullYear();
@@ -60,19 +49,15 @@ function hitungStatus(daysFromNow) {
   return "Aktif";
 }
 
-// ==================== SEED FUNCTION ====================
-
 export async function seedDatabase() {
   const results = { members: 0, presensi: 0, tamu: 0, paket: 0 };
 
   try {
-    // Cek apakah sudah pernah di-seed
     const existingMembers = await getDocs(collection(db, "members"));
     if (existingMembers.size > 0) {
       return { error: "Database sudah berisi data! Hapus dulu kalau mau seed ulang." };
     }
 
-    // 1. Seed Paket Membership
     for (const paket of paketMembership) {
       await addDoc(collection(db, "paketMembership"), {
         ...paket,
@@ -81,14 +66,13 @@ export async function seedDatabase() {
       results.paket++;
     }
 
-    // 2. Seed Members
     const now = new Date();
     for (const m of dummyMembers) {
       const tanggalExpired = new Date(now);
       tanggalExpired.setDate(tanggalExpired.getDate() + m.daysFromNow);
 
       const tanggalDaftar = new Date(now);
-      tanggalDaftar.setDate(tanggalDaftar.getDate() - 30); // daftar 30 hari lalu
+      tanggalDaftar.setDate(tanggalDaftar.getDate() - 30);
 
       await addDoc(collection(db, "members"), {
         memberId: m.memberId,
@@ -109,13 +93,11 @@ export async function seedDatabase() {
       results.members++;
     }
 
-    // 3. Seed Presensi (3 hari terakhir)
     for (let dayOffset = 0; dayOffset < 3; dayOffset++) {
       const date = new Date(now);
       date.setDate(date.getDate() - dayOffset);
       const tanggal = toDateString(date);
 
-      // Random 6-10 member check-in per hari
       const shuffled = [...dummyMembers].sort(() => Math.random() - 0.5);
       const checkInCount = 6 + Math.floor(Math.random() * 5);
       const checkIns = shuffled.slice(0, checkInCount);
@@ -139,7 +121,6 @@ export async function seedDatabase() {
         results.presensi++;
       }
 
-      // Tambah 1-2 tamu per hari
       const tamuCount = 1 + Math.floor(Math.random() * 2);
       const namasTamu = ["Riko Aditya", "Siska Permata", "Wawan Setiawan", "Dewi Kartini"];
       for (let t = 0; t < tamuCount; t++) {
@@ -147,7 +128,6 @@ export async function seedDatabase() {
         jamTamu.setHours(9 + t * 3, 30, 0, 0);
         const namaTamu = namasTamu[(dayOffset * 2 + t) % namasTamu.length];
 
-        // Ke collection tamu
         await addDoc(collection(db, "tamu"), {
           nama: namaTamu,
           nomorHp: "08129999000" + t,
@@ -156,7 +136,6 @@ export async function seedDatabase() {
           createdAt: Timestamp.fromDate(jamTamu),
         });
 
-        // Ke collection presensi juga
         await addDoc(collection(db, "presensi"), {
           memberId: null,
           fingerprintId: null,

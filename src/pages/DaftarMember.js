@@ -6,7 +6,6 @@ import {
 } from "../services/firebaseService";
 import "./DaftarMember.css";
 
-// ===== Helper: hitung bulan-bulan yang ter-cover oleh satu periode =====
 function getBulanYangTercover(tanggalMulai, tanggalExpired) {
   const bulanList = [];
   if (!tanggalMulai || !tanggalExpired) return bulanList;
@@ -31,14 +30,12 @@ function DaftarMember() {
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
 
-  // ===== Modal detail member =====
   const [selectedMember, setSelectedMember] = useState(null);
   const [modalTransaksi, setModalTransaksi] = useState([]);
   const [modalLoading, setModalLoading] = useState(false);
 
   const itemsPerPage = 7;
 
-  // ===== Realtime listener: Members =====
   useEffect(() => {
     const unsubscribe = onMembersSnapshot((data) => {
       setMembers(data);
@@ -47,7 +44,6 @@ function DaftarMember() {
     return () => unsubscribe();
   }, []);
 
-  // ===== Buka modal detail member =====
   const handleRowClick = async (member) => {
     setSelectedMember(member);
     setModalLoading(true);
@@ -66,7 +62,6 @@ function DaftarMember() {
     setModalTransaksi([]);
   };
 
-  // ===== Hitung bulan yang ijo di modal member =====
   const getBulanAktif = () => {
     const aktif = new Set();
 
@@ -86,7 +81,6 @@ function DaftarMember() {
     return aktif;
   };
 
-  // ===== Generate Januari–Desember tahun berjalan =====
   const generateBulanTahunIni = () => {
     const tahun = new Date().getFullYear();
     const hasil = [];
@@ -102,7 +96,6 @@ function DaftarMember() {
     return hasil;
   };
 
-  // ===== Hitung status realtime =====
   const membersWithStatus = members.map((m) => ({
     ...m,
     statusRealtime: hitungStatusMembership(m.tanggalExpired),
@@ -114,7 +107,6 @@ function DaftarMember() {
   const h3 = membersWithStatus.filter((m) => m.statusRealtime === "Aktif (H-3)").length;
   const expired = membersWithStatus.filter((m) => m.statusRealtime === "Expired").length;
 
-  // ===== Filter & Search =====
   const filteredMembers = membersWithStatus.filter((member) => {
     const matchStatus =
       filterStatus === "Semua" ||
@@ -126,21 +118,18 @@ function DaftarMember() {
     return matchStatus && matchNama;
   });
 
-  // ===== Pagination =====
   const totalPages = Math.ceil(filteredMembers.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedMembers = filteredMembers.slice(startIndex, startIndex + itemsPerPage);
 
   const handleFilter = () => setCurrentPage(1);
 
-  // ===== Format tanggal =====
   const formatTanggal = (timestamp) => {
     if (!timestamp) return "-";
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
     return date.toLocaleDateString("id-ID", { day: "numeric", month: "numeric", year: "numeric" });
   };
 
-  // ===== Status badge class =====
   const getStatusClass = (status) => {
     if (!status) return "status-badge status-default";
     if (status.includes("H-7")) return "status-badge status-h7";
@@ -150,7 +139,6 @@ function DaftarMember() {
     return "status-badge status-default";
   };
 
-  // ===== Generate nomor halaman =====
   const getPageNumbers = () => {
     const pages = [];
     if (totalPages <= 5) {
@@ -185,7 +173,6 @@ function DaftarMember() {
     <div className="daftar-member">
       <h1 className="page-title">Daftar Member</h1>
 
-      {/* ===== RINGKASAN STATISTIK ===== */}
       <div className="card-section">
         <h2 className="section-title">Ringkasan Statistik</h2>
         <div className="ringkasan-stats">
@@ -212,7 +199,6 @@ function DaftarMember() {
         </div>
       </div>
 
-      {/* ===== FILTER & PENCARIAN ===== */}
       <div className="card-section">
         <h2 className="section-title">Filter & Pencarian</h2>
         <div className="filter-row">
@@ -248,7 +234,6 @@ function DaftarMember() {
         </div>
       </div>
 
-      {/* ===== TABEL DAFTAR MEMBER ===== */}
       <div className="card-section">
         <h2 className="section-title">Daftar Member</h2>
         <p style={{ fontSize: "13px", color: "#888", marginBottom: "12px" }}>
@@ -334,7 +319,6 @@ function DaftarMember() {
         )}
       </div>
 
-      {/* ===== MODAL DETAIL MEMBER — riwayat perpanjangan ===== */}
       {selectedMember && (
         <div className="modal-overlay" onClick={handleCloseModal}>
           <div className="modal-card" onClick={(e) => e.stopPropagation()}>

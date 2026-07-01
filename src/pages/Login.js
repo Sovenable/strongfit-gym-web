@@ -14,7 +14,6 @@ function Login() {
     setLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      // Kalau berhasil, App.js akan otomatis redirect ke dashboard
     } catch (err) {
       setError("Email atau password salah. Silakan coba lagi.");
     } finally {

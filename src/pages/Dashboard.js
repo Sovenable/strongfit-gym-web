@@ -10,8 +10,6 @@ function Dashboard() {
   const [members, setMembers] = useState([]);
   const [presensiHariIni, setPresensiHariIni] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [countdown, setCountdown] = useState(null);
-  const [pollingInterval, setPollingInterval] = useState(15);
 
   useEffect(() => {
     const unsubscribe = onMembersSnapshot((data) => {
@@ -27,31 +25,6 @@ function Dashboard() {
     });
     return () => unsubscribe();
   }, []);
-
-  useEffect(() => {
-    const fetchPollingInfo = async () => {
-      try {
-        const res = await fetch("http://localhost:3001/api/polling-info");
-        const data = await res.json();
-        const detik = Math.round(data.pollingInterval / 1000);
-        setPollingInterval(detik);
-        setCountdown(detik);
-      } catch {
-        setCountdown(15);
-      }
-    };
-    fetchPollingInfo();
-  }, []);
-
-  useEffect(() => {
-    if (countdown === null) return;
-    if (countdown <= 0) {
-      setCountdown(pollingInterval);
-      return;
-    }
-    const timer = setTimeout(() => setCountdown((c) => c - 1), 1000);
-    return () => clearTimeout(timer);
-  }, [countdown, pollingInterval]);
 
   const memberAktif = members.filter((m) => {
     const status = hitungStatusMembership(m.tanggalExpired);
@@ -98,18 +71,6 @@ function Dashboard() {
   return (
     <div className="dashboard">
       <h1 className="page-title">Dashboard</h1>
-      {countdown !== null && (
-        <div className="refresh-countdown">
-          <span className="refresh-icon">🔄</span>
-          <span className="refresh-text">
-            Refresh data fingerprint dalam{" "}
-            <strong style={{ color: countdown <= 5 ? "#e74c3c" : "#4a90d9" }}>
-              {countdown}
-            </strong>{" "}
-            detik
-          </span>
-        </div>
-      )}
       <div className="stat-cards">
         <div className="stat-card card-member">
           <span className="stat-label">MEMBER AKTIF</span>

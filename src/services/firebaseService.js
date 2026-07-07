@@ -224,6 +224,26 @@ export const addTransaksiMembership = async (transaksiData, memberDocId) => {
     tanggalExpired: Timestamp.fromDate(tanggalExpiredBaru),
   });
 
+  const tanggalHariIni = toDateString(now);
+  const presensiSnapshot = await getDocs(
+    query(
+      collection(db, "presensi"),
+      where("memberId", "==", transaksiData.memberId),
+      where("tanggal", "==", tanggalHariIni)
+    )
+  );
+
+  if (!presensiSnapshot.empty) {
+    const statusBaru = hitungStatusMembership(tanggalExpiredBaru);
+    await Promise.all(
+      presensiSnapshot.docs.map((docSnap) =>
+        updateDoc(doc(db, "presensi", docSnap.id), {
+          statusMembership: statusBaru,
+        })
+      )
+    );
+  }
+
   return newTransaksi;
 };
 

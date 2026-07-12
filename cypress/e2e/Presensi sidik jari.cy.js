@@ -156,4 +156,73 @@ describe("FT-03: Presensi Sidik Jari", () => {
       cy.get(".status-badge").should("contain", "Expired");
     });
   });
+   // ----------------------------------------------------------
+  // Skenario 3: Member H-7 presensi
+  // ----------------------------------------------------------
+  it("Data presensi member H-7 tetap tampil dengan status Aktif (H-7)", () => {
+    const now = new Date();
+    const tanggal = toDateString(now);
+
+    const presensiDataH7 = {
+      memberId: testMemberId,
+      fingerprintId: "999",
+      nama: testNama,
+      tipe: "Member",
+      statusMembership: "Aktif (H-7)",
+      waktuCheckIn: Timestamp.fromDate(now),
+      tanggal: tanggal,
+      sumber: "fingerprint",
+      createdAt: serverTimestamp(),
+    };
+
+    cy.wrap(
+      cleanupData().then(() =>
+        addDoc(collection(db, "presensi"), presensiDataH7)
+      ),
+      { timeout: 20000 }
+    ).should("exist");
+
+    cy.visit("/laporan-presensi");
+    cy.get(".laporan-presensi", { timeout: 10000 }).should("be.visible");
+    cy.get(".data-table tbody", { timeout: 15000 }).should("contain", testNama);
+
+    cy.contains("tr", testNama).within(() => {
+      cy.get(".status-badge").should("contain", "Aktif (H-7)");
+    });
+  });
+
+  // ----------------------------------------------------------
+  // Skenario 4: Member H-3 presensi
+  // ----------------------------------------------------------
+  it("Data presensi member H-3 tetap tampil dengan status Aktif (H-3)", () => {
+    const now = new Date();
+    const tanggal = toDateString(now);
+
+    const presensiDataH3 = {
+      memberId: testMemberId,
+      fingerprintId: "999",
+      nama: testNama,
+      tipe: "Member",
+      statusMembership: "Aktif (H-3)",
+      waktuCheckIn: Timestamp.fromDate(now),
+      tanggal: tanggal,
+      sumber: "fingerprint",
+      createdAt: serverTimestamp(),
+    };
+
+    cy.wrap(
+      cleanupData().then(() =>
+        addDoc(collection(db, "presensi"), presensiDataH3)
+      ),
+      { timeout: 20000 }
+    ).should("exist");
+
+    cy.visit("/laporan-presensi");
+    cy.get(".laporan-presensi", { timeout: 10000 }).should("be.visible");
+    cy.get(".data-table tbody", { timeout: 15000 }).should("contain", testNama);
+
+    cy.contains("tr", testNama).within(() => {
+      cy.get(".status-badge").should("contain", "Aktif (H-3)");
+    });
+  });
 });

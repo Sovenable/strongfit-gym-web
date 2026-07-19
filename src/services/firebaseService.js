@@ -274,7 +274,6 @@ export const addTamu = async (tamuData) => {
 
   const newTamu = {
     nama: tamuData.nama,
-    nomorHp: tamuData.nomorHp,
     tanggalKunjungan: tanggal,
     waktuKunjungan: Timestamp.fromDate(now),
     createdAt: serverTimestamp(),

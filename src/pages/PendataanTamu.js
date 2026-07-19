@@ -5,7 +5,6 @@ import "./PendataanTamu.css";
 function PendataanTamu() {
   const [formData, setFormData] = useState({
     nama: "",
-    nomorHp: "",
   });
 
   const [errors, setErrors] = useState({});
@@ -31,12 +30,6 @@ function PendataanTamu() {
       newErrors.nama = "Nama hanya boleh huruf dan spasi";
     }
 
-    if (!formData.nomorHp.trim()) {
-      newErrors.nomorHp = "Nomor HP tidak boleh kosong";
-    } else if (!/^08\d{8,11}$/.test(formData.nomorHp)) {
-      newErrors.nomorHp = "Format: 08xxxxxxxxxx (10-13 digit)";
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -59,7 +52,7 @@ function PendataanTamu() {
       setSuccessMsg(
         `Tamu "${formData.nama}" berhasil dicatat pada ${tanggalHariIni}.`
       );
-      setFormData({ nama: "", nomorHp: "" });
+      setFormData({ nama: "" });
       setErrors({});
     } catch (error) {
       console.error("Error tambah tamu:", error);
@@ -69,7 +62,7 @@ function PendataanTamu() {
   };
 
   const handleBatal = () => {
-    setFormData({ nama: "", nomorHp: "" });
+    setFormData({ nama: "" });
     setErrors({});
     setSuccessMsg("");
   };
@@ -113,26 +106,6 @@ function PendataanTamu() {
               onChange={handleChange}
             />
             {errors.nama && <span className="error-text">{errors.nama}</span>}
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">
-              Nomor HP <span className="required">*</span>
-            </label>
-            <input
-              type="text"
-              name="nomorHp"
-              className={`form-input ${errors.nomorHp ? "input-error" : ""}`}
-              placeholder="08xxxxxxxxxxx"
-              value={formData.nomorHp}
-              onChange={handleChange}
-            />
-            <span className="form-hint">
-              Format: 08xxxxxxxxxx (tanpa spasi atau tanda hubung)
-            </span>
-            {errors.nomorHp && (
-              <span className="error-text">{errors.nomorHp}</span>
-            )}
           </div>
         </div>
 

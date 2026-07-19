@@ -173,6 +173,7 @@ function DaftarMember() {
     <div className="daftar-member">
       <h1 className="page-title">Daftar Member</h1>
 
+      {/* ===== RINGKASAN STATISTIK ===== */}
       <div className="card-section">
         <h2 className="section-title">Ringkasan Statistik</h2>
         <div className="ringkasan-stats">
@@ -199,6 +200,7 @@ function DaftarMember() {
         </div>
       </div>
 
+      {/* ===== FILTER & PENCARIAN ===== */}
       <div className="card-section">
         <h2 className="section-title">Filter & Pencarian</h2>
         <div className="filter-row">
@@ -234,6 +236,7 @@ function DaftarMember() {
         </div>
       </div>
 
+      {/* ===== TABEL DAFTAR MEMBER ===== */}
       <div className="card-section">
         <h2 className="section-title">Daftar Member</h2>
         <p style={{ fontSize: "13px", color: "#888", marginBottom: "12px" }}>
@@ -319,6 +322,7 @@ function DaftarMember() {
         )}
       </div>
 
+      {/* ===== MODAL DETAIL MEMBER — riwayat perpanjangan ===== */}
       {selectedMember && (
         <div className="modal-overlay" onClick={handleCloseModal}>
           <div className="modal-card" onClick={(e) => e.stopPropagation()}>

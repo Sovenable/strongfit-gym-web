@@ -6,6 +6,7 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "http://192.168.1.10";
 
 const NGROK_HEADERS = {
   'ngrok-skip-browser-warning': 'true',
+  'x-api-key': process.env.REACT_APP_BACKEND_API_KEY || '',
 };
 
 const paketList = [
